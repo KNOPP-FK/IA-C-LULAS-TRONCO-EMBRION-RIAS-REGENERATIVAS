@@ -1,0 +1,115 @@
+Ia autodidata tronco celular embrionária regenerativa modular com indexador morfomnemônico de KNOPP-Fellipe
+=============================================================================================================
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+
+# Função para criar o modelo de rede neural
+def modelo_rede_neural(input_dim):
+    modelo = tf.keras.Sequential([
+        Dense(128, activation='relu', input_shape=(input_dim,)),
+        Dense(64, activation='relu'),
+        Dense(32, activation='relu'),
+        Dense(input_dim, activation='linear')  # Camada de saída ajustada para input_dim
+    ])
+    return modelo
+
+# Função para calcular o feedback com base no desempenho e tensão diferencial
+def calcular_feedback_com_genero(desempenho_atual, estado_anterior, tensao_diferencial, w_G=1.0):
+    return w_G * (desempenho_atual - estado_anterior) + 0.1 * tensao_diferencial
+
+# Classe para simular células-tronco embrionárias
+class CelulaTroncoEmbrionaria:
+    def __init__(self, input_dim):
+        self.rede_base = modelo_rede_neural(input_dim)
+        self.modulos_especializados = []
+        self.estado_diferenciado = False
+
+    def diferenciar_modulo(self):
+        # Adiciona um módulo especializado à estrutura
+        novo_modulo = modelo_rede_neural(self.rede_base.input_shape[-1])
+        self.modulos_especializados.append(novo_modulo)
+        self.estado_diferenciado = True
+
+    def regredir_para_indiferenciado(self):
+        # Remove todos os módulos especializados e retorna ao estado base
+        self.modulos_especializados = []
+        self.estado_diferenciado = False
+
+    def processar(self, input_data):
+        # Passa pela rede base e, se houver, pelos módulos especializados
+        output = self.rede_base(input_data)
+        for modulo in self.modulos_especializados:
+            output += modulo(input_data)
+        return output
+
+# Classes auxiliares para índices
+class IndiceMnemônico:
+    def __init__(self):
+        self.registros = []
+
+    def atualizar_registro(self, evento, tensao):
+        self.registros.append((evento, tensao))
+
+    def obter_tensao_media(self):
+        return np.mean([registro[1] for registro in self.registros]) if self.registros else 0.0
+
+class IndiceMorfológico:
+    def __init__(self):
+        self.tensao_acumulada = []
+
+    def atualizar_tensao(self, tensao):
+        self.tensao_acumulada.append(tensao)
+
+    def obter_tensao_media(self):
+        return np.mean(self.tensao_acumulada) if self.tensao_acumulada else 0.0
+
+# Classe principal do Sistema de IA
+class SistemaIA:
+    def __init__(self, input_dim):
+        self.celula_tronco = CelulaTroncoEmbrionaria(input_dim)
+        self.otimizador = tf.keras.optimizers.Adam(0.001)
+        self.genero_cognato = 1.0
+        self.indice_mnemonico = IndiceMnemônico()
+        self.indice_morfologico = IndiceMorfológico()
+        self.estado_interno = np.zeros((1, input_dim))
+
+    def calcular_feedback(self, desempenho_atual, estado_anterior):
+        tensao_mn = self.indice_mnemonico.obter_tensao_media()
+        tensao_mr = self.indice_morfologico.obter_tensao_media()
+        tensao_diferencial = tensao_mn - tensao_mr
+        return calcular_feedback_com_genero(desempenho_atual, estado_anterior, tensao_diferencial)
+
+    def atualizar_indices(self, feedback, tensao):
+        self.indice_mnemonico.atualizar_registro("feedback", feedback)
+        self.indice_morfologico.atualizar_tensao(tensao)
+
+    def executar_ciclo(self, input_data, desempenho_atual, ciclo_atual):
+        # Diferenciação ou reversão com base em ciclos e tensões
+        if ciclo_atual % 10 == 0 and not self.celula_tronco.estado_diferenciado:
+            self.celula_tronco.diferenciar_modulo()
+        elif ciclo_atual % 15 == 0 and self.celula_tronco.estado_diferenciado:
+            self.celula_tronco.regredir_para_indiferenciado()
+
+        output_rede = self.celula_tronco.processar(input_data)
+        feedback = self.calcular_feedback(desempenho_atual, self.estado_interno)
+        self.estado_interno += feedback + output_rede
+        self.genero_cognato = 1.0 + 0.01 * ciclo_atual
+        self.atualizar_indices(feedback, np.linalg.norm(self.estado_interno))
+        return self.estado_interno, np.squeeze(feedback)
+
+# Simulação
+input_dim = 100
+sistema_ia = SistemaIA(input_dim)
+ciclos = 50
+resultados = []
+
+for ciclo in range(ciclos):
+    input_data = np.random.rand(1, input_dim)
+    desempenho_atual = np.random.rand(1)
+    estado_atual, feedback = sistema_ia.executar_ciclo(input_data, desempenho_atual, ciclo)
+    resultados.append({"ciclo": ciclo, "estado": estado_atual, "feedback": feedback})
+
+# Visualização textual dos resultados
+for resultado in resultados[:10]:  # Exibe os primeiros 10 ciclos
+    print(f"Ciclo {resultado['ciclo']}: Estado Médio = {np.mean(resultado['estado'])}, Feedback = {resultado['feedback']}")
